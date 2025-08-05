@@ -71,12 +71,43 @@ This is an AWS RDS performance simulation lab built with NestJS and TypeORM. The
 - **Index Usage**: Use `EXPLAIN` queries to verify index effectiveness
 - **Response Times**: Target <100ms for paginated queries, <200ms for searches
 
+### API Version Testing
+
+The project includes two API versions for performance comparison:
+
+#### V1 API (Baseline - `/posts`)
+- Traditional OFFSET/LIMIT pagination
+- Standard TypeORM queries
+- Use for baseline performance measurements
+
+#### V2 API (Optimized - `/posts/v2`) 
+- Cursor-based pagination
+- Query builder with JOIN optimization
+- Full-text search capabilities
+- Optimized counting with estimation
+
+#### Performance Testing Commands
+```bash
+# Test V1 (original) performance
+curl "http://localhost:3000/posts?page=1&limit=20"
+curl "http://localhost:3000/posts/count"
+curl "http://localhost:3000/posts/1"
+
+# Test V2 (optimized) performance  
+curl "http://localhost:3000/posts/v2?limit=20"
+curl "http://localhost:3000/posts/v2/count"
+curl "http://localhost:3000/posts/v2/count/estimated"
+curl "http://localhost:3000/posts/v2/1"
+curl "http://localhost:3000/posts/v2/search?title=keyword"
+```
+
 ### Critical Performance Rules
 1. **Always Use Indexes**: Create indexes before testing large dataset queries
-2. **Limit Result Sets**: Never fetch all records without pagination
-3. **Monitor Query Plans**: Use EXPLAIN to verify query optimization
-4. **Test Both Instances**: Compare performance on t3.micro vs t3.xlarge
-5. **Use Cursor Pagination**: Avoid deep OFFSET queries (page 1000+)
+2. **Compare V1 vs V2**: Use both endpoints to measure optimization impact
+3. **Limit Result Sets**: Never fetch all records without pagination
+4. **Monitor Query Plans**: Use EXPLAIN to verify query optimization
+5. **Test Both Instances**: Compare performance on t3.micro vs t3.xlarge
+6. **Use V2 for Production**: V2 endpoints are optimized for large datasets
 
 ## Important Notes
 

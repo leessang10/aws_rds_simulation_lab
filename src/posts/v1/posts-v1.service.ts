@@ -1,20 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindManyOptions, Like, Repository } from 'typeorm';
-import { Post } from '../entities/post.entity';
-import { CreatePostDto, GetPostsDto, UpdatePostDto } from './posts.dto';
+import { Post } from '../../entities/post.entity';
+import { CountPostsDto, CountResponseDto, GetPostsDto } from '../posts.dto';
 
 @Injectable()
-export class PostsService {
+export class PostsV1Service {
   constructor(
     @InjectRepository(Post)
     private postsRepository: Repository<Post>,
   ) {}
-
-  async create(data: CreatePostDto): Promise<Post> {
-    const post = this.postsRepository.create(data);
-    return this.postsRepository.save(post);
-  }
 
   private getFindOptions(query: GetPostsDto): FindManyOptions<Post> {
     const { page, limit, title, authorName, status, type, sortBy, sortOrder } =
@@ -44,38 +39,41 @@ export class PostsService {
 
   async findAll(query: GetPostsDto): Promise<Post[]> {
     const options = this.getFindOptions(query);
+    // V1: Uses separate queries (N+1 problem)
     return this.postsRepository.find({ ...options, relations: ['author'] });
   }
 
-  async count(query: GetPostsDto): Promise<{ total: number }> {
-    const options = this.getFindOptions(query);
-    delete options.skip;
-    delete options.take;
-    const total = await this.postsRepository.count(options);
+  async count(query: CountPostsDto): Promise<CountResponseDto> {
+    const where: FindManyOptions<Post>['where'] = {};
+
+    if (query.title) {
+      where.title = Like(`%${query.title}%`);
+    }
+    if (query.authorName) {
+      where.author = { name: Like(`%${query.authorName}%`) };
+    }
+    if (query.status) {
+      where.status = query.status;
+    }
+    if (query.type) {
+      where.type = query.type;
+    }
+
+    // V1: Standard count query with potential N+1 issues
+    const total = await this.postsRepository.count({ where });
     return { total };
   }
 
   async findOne(id: number): Promise<Post> {
+    // V1: Basic query with relations loading
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['author', 'comments'],
+      relations: ['author', 'comments', 'comments.author'],
     });
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
     return post;
-  }
-
-  async update(id: number, data: UpdatePostDto): Promise<Post> {
-    const post = await this.findOne(id);
-    this.postsRepository.merge(post, data);
-    return this.postsRepository.save(post);
-  }
-
-  async remove(id: number): Promise<void> {
-    const result = await this.postsRepository.softDelete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
-    }
   }
 }

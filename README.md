@@ -147,8 +147,38 @@ With 10+ million records, the Posts API may experience performance issues. Here 
 - **Pagination**: Deep pagination (page 1000+) performs consistently
 - **Search**: Full-text search responds in <200ms
 
+### API Version Comparison
+
+The Posts API is available in two versions for performance comparison:
+
+#### V1 API (Original - `/posts`)
+- **Traditional pagination**: Uses OFFSET/LIMIT (slower on large datasets)
+- **Basic queries**: Standard TypeORM queries without optimization
+- **N+1 queries**: Separate queries for relationships
+- **Simple filtering**: Basic LIKE queries for search
+
+#### V2 API (Optimized - `/posts/v2`)
+- **Cursor pagination**: ID-based pagination (consistent performance)
+- **Optimized queries**: Query builder with JOIN optimization
+- **N+1 solved**: Single query with leftJoinAndSelect
+- **Full-text search**: MySQL FULLTEXT indexes for content search
+- **Smart counting**: Estimated counts for better performance
+
+#### Performance Comparison Endpoints
+
+| Feature | V1 Endpoint | V2 Endpoint | Expected Improvement |
+|---------|-------------|-------------|---------------------|
+| List posts | `GET /posts` | `GET /posts/v2` | 10-50x faster |
+| Count posts | `GET /posts/count` | `GET /posts/v2/count` | 5-20x faster |
+| Fast count | N/A | `GET /posts/v2/count/estimated` | 100x+ faster |
+| Search posts | `GET /posts?title=keyword` | `GET /posts/v2/search?title=keyword` | 20-100x faster |
+| Get post | `GET /posts/:id` | `GET /posts/v2/:id` | 2-5x faster |
+| Get with comments | `GET /posts/:id` | `GET /posts/v2/:id/full` | 3-10x faster |
+
 ### Usage Tips
 1. **Always use pagination** - Never fetch all records at once
 2. **Add indexes first** - Run index creation queries before testing
-3. **Monitor slow queries** - Check TypeORM logs for optimization opportunities
-4. **Use appropriate instance** - Test with both t3.micro and t3.xlarge for comparison
+3. **Compare V1 vs V2** - Test same queries on both endpoints to see performance difference
+4. **Use V2 for production** - V2 endpoints are optimized for large datasets
+5. **Monitor slow queries** - Check TypeORM logs for optimization opportunities
+6. **Use appropriate instance** - Test with both t3.micro and t3.xlarge for comparison
