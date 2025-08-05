@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostsModule } from './posts/posts.module';
-import { User } from './entities/user.entity';
-import { Post } from './entities/post.entity';
 import { Comment } from './entities/comment.entity';
+import { Post } from './entities/post.entity';
+import { User } from './entities/user.entity';
+import { PostsModule } from './posts/posts.module';
 
 @Module({
   imports: [
@@ -17,7 +17,8 @@ import { Comment } from './entities/comment.entity';
       password: process.env.DB_PASSWORD || '123123123',
       database: process.env.DB_DATABASE || 'test',
       entities: [User, Post, Comment],
-      synchronize: true, // In production, you should use migrations instead.
+      synchronize: false, // In production, you should use migrations instead.
+      logging: true,
     }),
     PostsModule,
   ],
