@@ -1,6 +1,6 @@
 // aws_rds_simulation_lab/prisma/seed.ts
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, PostStatus, PostType } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
@@ -44,9 +44,10 @@ async function main() {
 
     for (let i = 0; i < postCount; i++) {
         posts.push({
-            title: faker.lorem.sentence(),
+            title: faker.lorem.sentence({ min: 3, max: 10 }),
             content: faker.lorem.paragraphs(2, '\n'),
-            published: faker.datatype.boolean(),
+            status: faker.helpers.arrayElement(Object.values(PostStatus)),
+            type: faker.helpers.arrayElement(Object.values(PostType)),
             authorId: faker.helpers.arrayElement(userIds),
         });
     }
@@ -61,7 +62,7 @@ async function main() {
 
     for (let i = 0; i < commentCount; i++) {
         comments.push({
-            text: faker.lorem.sentence(),
+            text: faker.lorem.sentence({ min: 5, max: 25 }),
             postId: faker.helpers.arrayElement(postIds),
             authorId: faker.helpers.arrayElement(userIds),
         });
