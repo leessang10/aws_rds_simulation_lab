@@ -1,16 +1,56 @@
-// src/posts/posts.controller.ts
-
-import { Controller, Get, Query } from '@nestjs/common';
-import {GetPostsDto} from "./posts.dto";
+import { Controller, Get, Post, Body, Param, Delete, Put, Query, ParseIntPipe } from '@nestjs/common';
 import { PostsService } from './posts.service';
+import { CreatePostDto, UpdatePostDto, GetPostsDto } from './posts.dto';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 
-
+@ApiTags('posts')
 @Controller('posts')
 export class PostsController {
     constructor(private readonly postsService: PostsService) {}
 
+    @Post()
+    @ApiOperation({ summary: 'Create a new post' })
+    @ApiResponse({ status: 201, description: 'The post has been successfully created.' })
+    @ApiResponse({ status: 400, description: 'Bad Request.' })
+    create(@Body() createPostDto: CreatePostDto) {
+        return this.postsService.create(createPostDto);
+    }
+
     @Get()
+    @ApiOperation({ summary: 'Get all posts with pagination and filtering' })
+    @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
+    @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'Filter by title' })
+    @ApiQuery({ name: 'authorName', required: false, type: String, description: 'Filter by author name' })
+    @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'], description: 'Filter by status' })
+    @ApiQuery({ name: 'type', required: false, enum: ['NORMAL', 'NOTICE', 'EVENT'], description: 'Filter by type' })
+    @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Sort by field (id, title, createdAt, updatedAt)' })
+    @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order' })
     findAll(@Query() query: GetPostsDto) {
         return this.postsService.findAll(query);
+    }
+
+    @Get(':id')
+    @ApiOperation({ summary: 'Get a post by ID' })
+    @ApiResponse({ status: 200, description: 'Return the post.' })
+    @ApiResponse({ status: 404, description: 'Post not found.' })
+    findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.postsService.findOne(id);
+    }
+
+    @Put(':id')
+    @ApiOperation({ summary: 'Update a post' })
+    @ApiResponse({ status: 200, description: 'The post has been successfully updated.' })
+    @ApiResponse({ status: 404, description: 'Post not found.' })
+    update(@Param('id', ParseIntPipe) id: number, @Body() updatePostDto: UpdatePostDto) {
+        return this.postsService.update(id, updatePostDto);
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Delete a post (soft delete)' })
+    @ApiResponse({ status: 200, description: 'The post has been successfully deleted.' })
+    @ApiResponse({ status: 404, description: 'Post not found.' })
+    remove(@Param('id', ParseIntPipe) id: number) {
+        return this.postsService.remove(id);
     }
 }
