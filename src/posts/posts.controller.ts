@@ -18,24 +18,12 @@ export class PostsController {
 
     @Get()
     @ApiOperation({ summary: 'Get all posts with pagination and filtering' })
-    @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-    @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
-    @ApiQuery({ name: 'title', required: false, type: String, description: 'Filter by title' })
-    @ApiQuery({ name: 'authorName', required: false, type: String, description: 'Filter by author name' })
-    @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'], description: 'Filter by status' })
-    @ApiQuery({ name: 'type', required: false, enum: ['NORMAL', 'NOTICE', 'EVENT'], description: 'Filter by type' })
-    @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Sort by field (id, title, createdAt, updatedAt)' })
-    @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order' })
     findAll(@Query() query: GetPostsDto) {
         return this.postsService.findAll(query);
     }
 
     @Get('count')
     @ApiOperation({ summary: 'Get the total count of posts with filtering' })
-    @ApiQuery({ name: 'title', required: false, type: String, description: 'Filter by title' })
-    @ApiQuery({ name: 'authorName', required: false, type: String, description: 'Filter by author name' })
-    @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'], description: 'Filter by status' })
-    @ApiQuery({ name: 'type', required: false, enum: ['NORMAL', 'NOTICE', 'EVENT'], description: 'Filter by type' })
     count(@Query() query: GetPostsDto) {
         return this.postsService.count(query);
     }

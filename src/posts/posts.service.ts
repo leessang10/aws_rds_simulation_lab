@@ -1,96 +1,78 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, FindManyOptions, Like } from 'typeorm';
+import { Post } from '../entities/post.entity';
 import { CreatePostDto, GetPostsDto, UpdatePostDto } from './posts.dto';
 
 @Injectable()
 export class PostsService {
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        @InjectRepository(Post)
+        private postsRepository: Repository<Post>,
+    ) {}
 
-    async create(data: CreatePostDto) {
-        return this.prisma.post.create({ data });
+    async create(data: CreatePostDto): Promise<Post> {
+        const post = this.postsRepository.create(data);
+        return this.postsRepository.save(post);
     }
 
-    private getWhereClause(query: GetPostsDto) {
-        const { title, authorName, status, type } = query;
-        const whereClause: any = {
-            deletedAt: null, // 소프트 삭제된 게시물 제외
-        };
+    private getFindOptions(query: GetPostsDto): FindManyOptions<Post> {
+        const { page, limit, title, authorName, status, type, sortBy, sortOrder } = query;
+        const where: FindManyOptions<Post>['where'] = {};
+
         if (title) {
-            whereClause.title = { contains: title };
+            where.title = Like(`%${title}%`);
         }
         if (authorName) {
-            whereClause.author = { name: { contains: authorName } };
+            where.author = { name: Like(`%${authorName}%`) };
         }
         if (status) {
-            whereClause.status = status;
+            where.status = status;
         }
         if (type) {
-            whereClause.type = type;
+            where.type = type;
         }
-        return whereClause;
-    }
 
-    async findAll(query: GetPostsDto) {
-        const { page, limit, sortBy, sortOrder } = query;
-        const offset = (page - 1) * limit;
-        const whereClause = this.getWhereClause(query);
-
-        return this.prisma.post.findMany({
-            skip: offset,
+        return {
+            where,
+            relations: ['author'],
+            order: { [sortBy]: sortOrder },
+            skip: (page - 1) * limit,
             take: limit,
-            where: whereClause,
-            orderBy: {
-                [sortBy]: sortOrder,
-            },
-            include: {
-                author: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
-                },
-                _count: {
-                    select: { Comment: true },
-                },
-            },
-        });
+        };
     }
 
-    async count(query: GetPostsDto) {
-        const whereClause = this.getWhereClause(query);
-        const totalPosts = await this.prisma.post.count({
-            where: whereClause,
-        });
-        return { total: totalPosts };
+    async findAll(query: GetPostsDto): Promise<Post[]> {
+        const options = this.getFindOptions(query);
+        return this.postsRepository.find(options);
     }
 
-    async findOne(id: number) {
-        const post = await this.prisma.post.findFirst({
-            where: { id, deletedAt: null },
-            include: {
-                author: true,
-                Comment: true,
-            },
-        });
+    async count(query: GetPostsDto): Promise<{ total: number }> {
+        const options = this.getFindOptions(query);
+        delete options.skip;
+        delete options.take;
+        const total = await this.postsRepository.count(options);
+        return { total };
+    }
+
+    async findOne(id: number): Promise<Post> {
+        const post = await this.postsRepository.findOne({ where: { id }, relations: ['author', 'comments'] });
         if (!post) {
             throw new NotFoundException(`Post with ID ${id} not found`);
         }
         return post;
     }
 
-    async update(id: number, data: UpdatePostDto) {
-        await this.findOne(id); // Check if post exists
-        return this.prisma.post.update({
-            where: { id },
-            data,
-        });
+    async update(id: number, data: UpdatePostDto): Promise<Post> {
+        const post = await this.findOne(id);
+        this.postsRepository.merge(post, data);
+        return this.postsRepository.save(post);
     }
 
-    async remove(id: number) {
-        await this.findOne(id); // Check if post exists
-        return this.prisma.post.update({
-            where: { id },
-            data: { deletedAt: new Date() },
-        });
+    async remove(id: number): Promise<void> {
+        const result = await this.postsRepository.softDelete(id);
+        if (result.affected === 0) {
+            throw new NotFoundException(`Post with ID ${id} not found`);
+        }
     }
 }
