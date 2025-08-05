@@ -52,13 +52,28 @@ export class PostsV2Controller {
 
   @Get('count/estimated')
   @ApiOperation({
-    summary:
-      '[V2] Get optimized count (uses estimation for better performance)',
+    summary: '[V2] ⚠️ INACCURATE estimated count - Use only for non-critical operations',
+    description: `
+      🚨 WARNING: This endpoint returns INACCURATE estimates that should NOT be used for critical operations.
+      
+      ✅ Safe to use for:
+      - Dashboard statistics (showing "~1M posts")
+      - UI performance hints
+      - Non-critical monitoring
+      
+      🚫 NEVER use for:
+      - Business calculations
+      - Financial operations  
+      - Data validation
+      - Any scenario requiring accuracy
+      
+      The MySQL table statistics can be completely wrong (often returns 0 even with millions of rows).
+      For accurate counts, always use GET /count instead.
+    `,
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Return post count (exact or estimated for better performance).',
+    description: 'Return estimated post count (WARNING: May be highly inaccurate - see operation description)',
     type: OptimizedCountResponseDto,
   })
   countOptimized(

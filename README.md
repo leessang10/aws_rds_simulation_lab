@@ -168,17 +168,43 @@ The Posts API is available in two versions for performance comparison:
 
 | Feature | V1 Endpoint | V2 Endpoint | Expected Improvement |
 |---------|-------------|-------------|---------------------|
-| List posts | `GET /posts` | `GET /posts/v2` | 10-50x faster |
-| Count posts | `GET /posts/count` | `GET /posts/v2/count` | 5-20x faster |
-| Fast count | N/A | `GET /posts/v2/count/estimated` | 100x+ faster |
-| Search posts | `GET /posts?title=keyword` | `GET /posts/v2/search?title=keyword` | 20-100x faster |
-| Get post | `GET /posts/:id` | `GET /posts/v2/:id` | 2-5x faster |
-| Get with comments | `GET /posts/:id` | `GET /posts/v2/:id/full` | 3-10x faster |
+| List posts | `GET /api/v1/posts` | `GET /api/v2/posts` | 10-50x faster |
+| Count posts | `GET /api/v1/posts/count` | `GET /api/v2/posts/count` | 5-20x faster |
+| ⚠️ Estimated count | N/A | `GET /api/v2/posts/count/estimated` | Fast but **INACCURATE** |
+| Search posts | `GET /api/v1/posts?title=keyword` | `GET /api/v2/posts/search?title=keyword` | 20-100x faster |
+| Get post | `GET /api/v1/posts/:id` | `GET /api/v2/posts/:id` | 2-5x faster |
+| Get with comments | `GET /api/v1/posts/:id` | `GET /api/v2/posts/:id/full` | 3-10x faster |
+
+### ⚠️ Important Warning: Estimated Count API
+
+The `GET /api/v2/posts/count/estimated` endpoint provides **INACCURATE** estimates and should be used with extreme caution:
+
+#### 🚫 **NEVER use estimated count for:**
+- Business calculations or financial operations
+- Data validation or integrity checks  
+- Any scenario requiring exact numbers
+- Billing or accounting systems
+- Critical decision making
+
+#### ✅ **Safe to use estimated count for:**
+- Dashboard statistics (showing "~1M posts")
+- UI performance hints and rough pagination estimates
+- Non-critical monitoring and analytics
+- Performance benchmarking where speed > accuracy
+
+#### **Why it's inaccurate:**
+- MySQL's `information_schema.tables.table_rows` is an approximation
+- Often returns 0 even when millions of rows exist
+- Values can be hours or days out of date
+- Completely unreliable after bulk operations
+
+**Always use the regular `/count` endpoint when accuracy matters.**
 
 ### Usage Tips
 1. **Always use pagination** - Never fetch all records at once
 2. **Add indexes first** - Run index creation queries before testing
 3. **Compare V1 vs V2** - Test same queries on both endpoints to see performance difference
-4. **Use V2 for production** - V2 endpoints are optimized for large datasets
-5. **Monitor slow queries** - Check TypeORM logs for optimization opportunities
-6. **Use appropriate instance** - Test with both t3.micro and t3.xlarge for comparison
+4. **Use V2 for production** - V2 endpoints are optimized for large datasets (except estimated count)
+5. **Avoid estimated count** - Use only for non-critical dashboards, never for business logic
+6. **Monitor slow queries** - Check TypeORM logs for optimization opportunities
+7. **Use appropriate instance** - Test with both t3.micro and t3.xlarge for comparison

@@ -111,25 +111,68 @@ export class PostsV2Service {
     return { total };
   }
 
+  /**
+   * ⚠️ WARNING: ESTIMATED COUNT IS INACCURATE - USE WITH CAUTION
+   * 
+   * This method provides estimated row counts which can be significantly inaccurate:
+   * - MySQL's information_schema.tables.table_rows is an approximation
+   * - Can return 0 even when millions of rows exist
+   * - Values may be outdated or completely wrong
+   * - Should NEVER be used when exact counts are required
+   * 
+   * 🔧 RECOMMENDED USE CASES:
+   * - Dashboard statistics where rough numbers are acceptable
+   * - UI pagination hints (showing "~1M results" instead of exact count)
+   * - Performance monitoring where speed > accuracy
+   * 
+   * 🚫 DO NOT USE FOR:
+   * - Business calculations requiring exact counts
+   * - Financial or billing operations
+   * - Data validation or integrity checks
+   * - Any scenario where accuracy is critical
+   * 
+   * For accurate counts, always use the regular count() method instead.
+   */
   async countOptimized(
     query: CountPostsDto,
   ): Promise<OptimizedCountResponseDto> {
-    // V2: For very large datasets, use estimated count for better performance
+    // V2: For very large datasets, attempt estimated count for better performance
     if (!query.title && !query.authorName && !query.status && !query.type) {
-      // No filters, use table statistics for estimate
-      const result = await this.postsRepository.query(
-        `SELECT table_rows as estimated_count 
-         FROM information_schema.tables 
-         WHERE table_schema = DATABASE() AND table_name = 'post'`,
-      );
-      this.logger.debug(JSON.stringify(result));
-      return {
-        total: result[0]?.estimated_count || 0,
-        estimated: true,
-      };
+      try {
+        // WARNING: This query returns MySQL's internal row estimate which is often inaccurate
+        const result = await this.postsRepository.query(
+          `SELECT table_rows as estimated_count 
+           FROM information_schema.tables 
+           WHERE table_schema = DATABASE() AND table_name = 'post'`,
+        );
+        
+        const estimatedCount = result[0]?.estimated_count || 0;
+        this.logger.warn(
+          `Estimated count returned: ${estimatedCount}. This may be inaccurate and should not be used for critical operations.`
+        );
+        
+        // If estimate seems too low (common issue), fall back to exact count
+        if (estimatedCount === 0 || estimatedCount < 1000) {
+          this.logger.warn('Estimated count appears too low, falling back to exact count for accuracy');
+          const qb = this.buildQuery(query, false);
+          const exactTotal = await qb.getCount();
+          return { total: exactTotal, estimated: false };
+        }
+        
+        return {
+          total: estimatedCount,
+          estimated: true,
+        };
+      } catch (error) {
+        this.logger.error('Failed to get estimated count, falling back to exact count', error);
+        // Fallback to exact count on error
+        const qb = this.buildQuery(query, false);
+        const total = await qb.getCount();
+        return { total, estimated: false };
+      }
     }
 
-    // With filters, get exact count but optimized
+    // With filters, always get exact count (estimation not meaningful with filters)
     const qb = this.buildQuery(query, false);
     const total = await qb.getCount();
     return { total, estimated: false };

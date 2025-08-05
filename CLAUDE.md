@@ -89,25 +89,53 @@ The project includes two API versions for performance comparison:
 #### Performance Testing Commands
 ```bash
 # Test V1 (original) performance
-curl "http://localhost:3000/posts?page=1&limit=20"
-curl "http://localhost:3000/posts/count"
-curl "http://localhost:3000/posts/1"
+curl "http://localhost:3000/api/v1/posts?page=1&limit=20"
+curl "http://localhost:3000/api/v1/posts/count"
+curl "http://localhost:3000/api/v1/posts/1"
 
 # Test V2 (optimized) performance  
-curl "http://localhost:3000/posts/v2?limit=20"
-curl "http://localhost:3000/posts/v2/count"
-curl "http://localhost:3000/posts/v2/count/estimated"
-curl "http://localhost:3000/posts/v2/1"
-curl "http://localhost:3000/posts/v2/search?title=keyword"
+curl "http://localhost:3000/api/v2/posts?limit=20"
+curl "http://localhost:3000/api/v2/posts/count"
+curl "http://localhost:3000/api/v2/posts/1"
+curl "http://localhost:3000/api/v2/posts/search?title=keyword"
+
+# ⚠️ WARNING: Inaccurate estimated count (use only for non-critical operations)
+curl "http://localhost:3000/api/v2/posts/count/estimated"
 ```
+
+### ⚠️ Estimated Count API Warning
+
+**NEVER use `/api/v2/posts/count/estimated` for production business logic:**
+
+#### 🚫 **Prohibited Use Cases:**
+- Financial calculations or billing
+- Data validation or integrity checks
+- Business decisions requiring exact counts
+- Accounting or audit trails
+- Any critical system functionality
+
+#### ✅ **Acceptable Use Cases:**
+- Dashboard statistics ("~1M posts")
+- UI performance hints
+- Non-critical analytics
+- Development/testing performance benchmarks
+
+#### **Why It Fails:**
+- MySQL `information_schema.tables.table_rows` is unreliable
+- Returns 0 even with millions of rows (common issue)
+- Statistics not updated after bulk operations
+- Can be hours/days out of date
+
+**Always use the regular `/count` endpoint for accurate results.**
 
 ### Critical Performance Rules
 1. **Always Use Indexes**: Create indexes before testing large dataset queries
 2. **Compare V1 vs V2**: Use both endpoints to measure optimization impact
-3. **Limit Result Sets**: Never fetch all records without pagination
-4. **Monitor Query Plans**: Use EXPLAIN to verify query optimization
-5. **Test Both Instances**: Compare performance on t3.micro vs t3.xlarge
-6. **Use V2 for Production**: V2 endpoints are optimized for large datasets
+3. **AVOID Estimated Count**: Never use for business logic, only dashboards
+4. **Limit Result Sets**: Never fetch all records without pagination
+5. **Monitor Query Plans**: Use EXPLAIN to verify query optimization
+6. **Test Both Instances**: Compare performance on t3.micro vs t3.xlarge
+7. **Use V2 for Production**: V2 endpoints are optimized for large datasets
 
 ## Important Notes
 
