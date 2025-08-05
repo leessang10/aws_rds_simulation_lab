@@ -18,7 +18,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts",
+    "docker:t3-micro:up": "docker-compose -f db_t3_micro/docker-compose.yml up -d",
+    "docker:t3-micro:down": "docker-compose -f db_t3_micro/docker-compose.yml down",
+    "docker:t3-xlarge:up": "docker-compose -f db_t3_xlarge/docker-compose.yml up -d",
+    "docker:t3-xlarge:down": "docker-compose -f db_t3_xlarge/docker-compose.yml down"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -1,7 +1,8 @@
+version: '3.8'
 services:
-  mysql-t3-micro:
+  mysql-t3-xlarge:
     image: mysql:8.0
-    container_name: mysql-t3-micro-container
+    container_name: mysql-t3-xlarge-container
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 123123123
@@ -12,12 +13,12 @@ services:
       - ./my.cnf:/etc/mysql/conf.d/my.cnf
       - mysql-data:/var/lib/mysql
 
-    # db.t3.micro 인스턴스 사양 시뮬레이션
+    # db.t3.xlarge 인스턴스 사양 시뮬레이션
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: '1g'
+          cpus: '4'
+          memory: '16g'
 
 volumes:
   mysql-data:
