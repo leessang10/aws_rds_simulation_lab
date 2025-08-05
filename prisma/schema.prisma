@@ -21,10 +21,11 @@ model User {
 model Post {
   id        Int       @id @default(autoincrement())
   title     String
-  content   String?   @db.Text // <-- 이 부분이 중요합니다.
+  content   String?   @db.Text
   published Boolean   @default(false)
   authorId  Int
   author    User      @relation(fields: [authorId], references: [id])
+  createdAt DateTime  @default(now())
   Comment   Comment[]
 }
 

@@ -18,8 +18,8 @@ async function main() {
     const posts: any[] = [];
     const comments: any[] = [];
 
-    // --- 1. User 데이터 생성 (10,000명) ---
-    const userCount = 10000;
+    // --- 1. User 데이터 생성 (1천만건) ---
+    const userCount = 10_000_000;
     console.log(`Generating ${userCount} users...`);
     const uniqueEmails = new Set<string>();
 
@@ -37,8 +37,8 @@ async function main() {
     await prisma.user.createMany({ data: users });
     console.log('User data seeded successfully.');
 
-    // --- 2. Post 데이터 생성 (50,000개) ---
-    const postCount = 50000;
+    // --- 2. Post 데이터 생성 (1천만건) ---
+    const postCount = 10_000_000;
     const userIds = (await prisma.user.findMany({ select: { id: true } })).map(u => u.id);
     console.log(`Generating ${postCount} posts...`);
 
@@ -54,8 +54,8 @@ async function main() {
     await prisma.post.createMany({ data: posts });
     console.log('Post data seeded successfully.');
 
-    // --- 3. Comment 데이터 생성 (100,000개) ---
-    const commentCount = 100000;
+    // --- 3. Comment 데이터 생성 (1천만건) ---
+    const commentCount = 10_000_000;
     const postIds = (await prisma.post.findMany({ select: { id: true } })).map(p => p.id);
     console.log(`Generating ${commentCount} comments...`);
 
