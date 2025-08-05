@@ -10,11 +10,8 @@ export class PostsService {
         return this.prisma.post.create({ data });
     }
 
-    async findAll(query: GetPostsDto) {
-        const { page, limit, title, authorName, status, type, sortBy, sortOrder } = query;
-
-        const offset = (page - 1) * limit;
-
+    private getWhereClause(query: GetPostsDto) {
+        const { title, authorName, status, type } = query;
         const whereClause: any = {
             deletedAt: null, // 소프트 삭제된 게시물 제외
         };
@@ -30,12 +27,15 @@ export class PostsService {
         if (type) {
             whereClause.type = type;
         }
+        return whereClause;
+    }
 
-        const totalPosts = await this.prisma.post.count({
-            where: whereClause,
-        });
+    async findAll(query: GetPostsDto) {
+        const { page, limit, sortBy, sortOrder } = query;
+        const offset = (page - 1) * limit;
+        const whereClause = this.getWhereClause(query);
 
-        const posts = await this.prisma.post.findMany({
+        return this.prisma.post.findMany({
             skip: offset,
             take: limit,
             where: whereClause,
@@ -54,16 +54,14 @@ export class PostsService {
                 },
             },
         });
+    }
 
-        return {
-            data: posts,
-            meta: {
-                total: totalPosts,
-                page,
-                limit,
-                lastPage: Math.ceil(totalPosts / limit),
-            },
-        };
+    async count(query: GetPostsDto) {
+        const whereClause = this.getWhereClause(query);
+        const totalPosts = await this.prisma.post.count({
+            where: whereClause,
+        });
+        return { total: totalPosts };
     }
 
     async findOne(id: number) {

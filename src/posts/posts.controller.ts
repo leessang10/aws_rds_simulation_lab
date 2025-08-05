@@ -30,6 +30,16 @@ export class PostsController {
         return this.postsService.findAll(query);
     }
 
+    @Get('count')
+    @ApiOperation({ summary: 'Get the total count of posts with filtering' })
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'Filter by title' })
+    @ApiQuery({ name: 'authorName', required: false, type: String, description: 'Filter by author name' })
+    @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'], description: 'Filter by status' })
+    @ApiQuery({ name: 'type', required: false, enum: ['NORMAL', 'NOTICE', 'EVENT'], description: 'Filter by type' })
+    count(@Query() query: GetPostsDto) {
+        return this.postsService.count(query);
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Get a post by ID' })
     @ApiResponse({ status: 200, description: 'Return the post.' })
